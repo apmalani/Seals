@@ -1,0 +1,10 @@
+pyobis
+erddapy
+xarray
+netCDF4
+numpy
+pandas
+scikit-learn
+joblib
+requests
+matplotlib
