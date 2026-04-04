@@ -8,3 +8,8 @@ scikit-learn
 joblib
 requests
 matplotlib
+fastapi
+pydantic
+uvicorn
+geopandas
+geopy

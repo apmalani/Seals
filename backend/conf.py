@@ -4,6 +4,23 @@ basedir = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(basedir, "data")
 MODELS_DIR = os.path.join(basedir, "models")
 RESULTS_DIR = os.path.join(basedir, "results")
+IHO_DATA_DIR = os.path.join(DATA_DIR, "iho")
+
+
+def resolve_iho_shapefile():
+    env = os.environ.get("IHO_SEAS_SHAPEFILE")
+    if env and os.path.isfile(env):
+        return env
+    for name in ("World_Seas_IHO_v3.shp", "World_Seas_IHO_V3.shp"):
+        p = os.path.join(IHO_DATA_DIR, name)
+        if os.path.isfile(p):
+            return p
+    if os.path.isdir(IHO_DATA_DIR):
+        for f in sorted(os.listdir(IHO_DATA_DIR)):
+            if f.lower().endswith(".shp"):
+                return os.path.join(IHO_DATA_DIR, f)
+    return None
+
 
 TAXON = "Phocidae"
 N_RECORDS = 50000
@@ -44,6 +61,32 @@ ALL_FEATS = base_feats + sq_feats + interaction_feats
 
 MIN_SPECIES_COUNT = 30
 TOP_K = 5
+
+API_REF_YEAR = 2015
+API_REF_DAY = 15
+
+SPECIES_COMMON = {
+    "Mirounga leonina": "Southern elephant seal",
+    "Leptonychotes weddellii": "Weddell seal",
+    "Halichoerus grypus": "Grey seal",
+    "Lobodon carcinophagus": "Crabeater seal",
+    "Phoca vitulina": "Harbor seal",
+    "Pusa hispida": "Ringed seal",
+    "Erignathus barbatus": "Bearded seal",
+    "Hydrurga leptonyx": "Leopard seal",
+    "Mirounga angustirostris": "Northern elephant seal",
+    "Monachus monachus": "Mediterranean monk seal",
+    "Neomonachus schauinslandi": "Hawaiian monk seal",
+    "Cystophora cristata": "Hooded seal",
+    "Pagophilus groenlandicus": "Harp seal",
+    "Phoca largha": "Spotted seal",
+    "Histriophoca fasciata": "Ribbon seal",
+    "other_phocidae": "Other phocid (rare / lumped)",
+}
+
+
+def species_common_name(scientific):
+    return SPECIES_COMMON.get(str(scientific), str(scientific))
 
 TEST_SZ = 0.2
 SEED = 16111719
