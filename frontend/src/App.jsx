@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState } from 'react'
 import './App.css'
 import sealFacts from './sealFacts'
@@ -59,6 +60,12 @@ function App() {
       )}
     </div>
   )
+=======
+import SealMap from './SealMap.jsx'
+
+function App() {
+  return <SealMap />
+>>>>>>> 0e333b1 (white orb)
 }
 
 export default App
