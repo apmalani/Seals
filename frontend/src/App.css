@@ -1,81 +1,58 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: sans-serif; overflow: hidden; }
+/* Erase all default spacing so everything touches the edges */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-.app-container {
-  width: 100vw;
+.app-wrapper {
+  width: 100%;
   height: 100vh;
   position: relative; 
+  overflow: hidden; 
+  font-family: sans-serif;
 }
 
-/* background map layer placeholder */
-.placeholder-map-layer {
+/* The blue placeholder background */
+.placeholder-map {
   width: 100%;
   height: 100%;
-  background-color: #8cb4db; /* Ocean blue! */
+  background-color: #a4c8e1; /* Ocean blue */
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  color: white;
 }
-.placeholder-text { color: #ffffff; opacity: 0.5; font-size: 2rem; }
 
-/* --- RIGHT SIDE CONTROLS --- */
-/* Pinned to the right edge, halfway down */
-.right-controls {
+/* The white box holding the zoom buttons */
+.zoom-controls {
   position: absolute;
+  top: 20px;
   right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: rgba(30, 30, 30, 0.8);
-  padding: 8px;
-  border-radius: 8px;
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  overflow: hidden;
 }
 
-.control-btn {
+/* The individual + and - buttons */
+.icon-btn {
   width: 40px;
   height: 40px;
-  border: none;
-  background: transparent;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-.control-btn:hover { background: rgba(255, 255, 255, 0.2); }
-.divider { height: 1px; background: rgba(255, 255, 255, 0.2); margin: 4px 0; }
-
-/* --- RIGHT SIDE TAB --- */
-.right-panel {
-  position: absolute;
-  right: 0;
-  top: 100px;
-}
-
-.side-tab {
-  background: #cd6b32; 
-  color: white;
-  border: none;
-  padding: 15px 10px;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(180deg);
-  border-radius: 0 8px 8px 0;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-/* THE PROBABILITY BOX SECTION */
-.probability-card {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
   background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-  text-align: center;
-  min-width: 300px;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+}
+
+/* Add a line between the two buttons */
+.icon-btn:first-child {
+  border-bottom: 1px solid #ddd;
+}
+
+.icon-btn:hover {
+  background-color: #f5f5f5;
 }
