@@ -62,6 +62,11 @@
 .icon-btn:first-child { border-bottom: 1px solid #ddd; }
 .icon-btn:hover { background-color: #f5f5f5; }
 
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
 .popup-panel {
   position: fixed;
   top: 0;
@@ -78,6 +83,7 @@
   flex-direction: column;
   gap: 16px;
   box-sizing: border-box;
+  animation: slideIn 0.3s ease;
 }
 
 .close-btn {
