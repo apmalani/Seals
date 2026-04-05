@@ -1,7 +1,6 @@
 data/
 .venv/
 results/
-models/
 frontend/.env
 frontend/.env.local
 frontend/.env.*.local
