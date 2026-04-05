@@ -148,9 +148,18 @@ def make_plots(s1, s2):
     os.makedirs(conf.RESULTS_DIR, exist_ok=True)
 
     fpr, tpr, _ = roc_curve(s1["yte"], s1["yprob"])
+    sea_blue = "#1a7fad"
     fig, ax = plt.subplots(figsize=(6, 5))
-    ax.plot(fpr, tpr, linewidth=2, label="AUC = %.3f" % s1["roc"])
-    ax.plot([0, 1], [0, 1], "k--", linewidth=0.8)
+    ax.fill_between(fpr, 0, tpr, color=sea_blue, alpha=0.32, zorder=1, linewidth=0)
+    ax.plot(
+        fpr,
+        tpr,
+        linewidth=2.2,
+        color=sea_blue,
+        label="AUC = %.3f" % s1["roc"],
+        zorder=2,
+    )
+    ax.plot([0, 1], [0, 1], "k--", linewidth=0.8, zorder=3)
     ax.set_xlabel("False Positive Rate")
     ax.set_ylabel("True Positive Rate")
     ax.set_title("ROC - Seal Presence (Stage 1)")
@@ -184,22 +193,32 @@ def make_plots(s1, s2):
         cm = confusion_matrix(yte, s2["yp"], labels=classes, normalize="true")
         fig, ax = plt.subplots(figsize=(9, 8))
         disp = ConfusionMatrixDisplay(cm, display_labels=classes)
-        disp.plot(ax=ax, cmap="Blues", values_format=".2f", xticks_rotation=45)
+        disp.plot(
+            ax=ax,
+            cmap="Blues",
+            values_format=".2f",
+            xticks_rotation=45,
+            colorbar=False,
+        )
         ax.set_title("Confusion Matrix - Species (normalized)")
         fig.tight_layout()
         fig.savefig(conf.CONFUSION_PNG, dpi=150)
         plt.close(fig)
         print("plot -> " + conf.CONFUSION_PNG)
 
-    feat_imp = sorted(zip(conf.ALL_FEATS, np.abs(s1["coef"])), key=lambda x: x[1])
+    top_n = 7
+    ranked = sorted(
+        zip(conf.ALL_FEATS, np.abs(s1["coef"])), key=lambda x: x[1], reverse=True
+    )[:top_n]
+    feat_imp = sorted(ranked, key=lambda x: x[1])
     names = [x[0] for x in feat_imp]
     vals = [x[1] for x in feat_imp]
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(8, 4.5))
     ax.barh(range(len(names)), vals)
     ax.set_yticks(range(len(names)))
-    ax.set_yticklabels(names, fontsize=8)
+    ax.set_yticklabels(names, fontsize=9)
     ax.set_xlabel("|Coefficient| (raw scale)")
-    ax.set_title("Feature Importance - Seal Presence (Stage 1)")
+    ax.set_title("Feature importance — top %d (Stage 1 seal presence)" % top_n)
     fig.tight_layout()
     fig.savefig(conf.FEAT_IMP_PNG, dpi=150)
     plt.close(fig)
