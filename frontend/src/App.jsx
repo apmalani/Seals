@@ -27,16 +27,16 @@ function App() {
   const [insight, setInsight] = useState(null)
 
   const handlePredictionResult = useCallback((data, meta) => {
-  const topName = data?.seal_present === true ? data?.species_top5?.[0]?.common_name : null
-  const speciesData = sealFacts.find(s => s.common_name === topName) || sealFacts.find(s => s.common_name === 'Harbor seal')
-  setInsight({
-    result: data,
-    meta,
-    fact: speciesData.fun_facts[Math.floor(Math.random() * speciesData.fun_facts.length)],
-    image: speciesData.images[Math.floor(Math.random() * speciesData.images.length)]
-  })
-  setShowPopup(true)
-}, [])
+    const topName = data?.seal_present === true ? data?.species_top5?.[0]?.common_name : null
+    const speciesData = sealFacts.find(s => s.common_name === topName) || sealFacts.find(s => s.common_name === 'Harbor seal')
+    setInsight({
+      result: data,
+      meta,
+      fact: speciesData.fun_facts[Math.floor(Math.random() * speciesData.fun_facts.length)],
+      image: speciesData.images[Math.floor(Math.random() * speciesData.images.length)]
+    })
+    setShowPopup(true)
+  }, [])
 
   const closePopup = () => {
     setShowPopup(false)
@@ -46,8 +46,6 @@ function App() {
   const m = insight?.meta
   const c = r?.covariates
 
-  
-
   return (
     <div className="app-wrapper">
       <div className={`map-container ${showPopup ? 'popup-open' : ''}`}>
@@ -55,12 +53,10 @@ function App() {
       </div>
 
       {showPopup && insight != null && (
-		
         <div className="popup-panel" onClick={(e) => e.stopPropagation()}>
 
           {/* Close button */}
           <button type="button" className="close-btn" onClick={closePopup} style={{ alignSelf: 'flex-start' }}>
-			
             <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M5.20825 19.7917L12.4999 12.5M12.4999 12.5L19.7916 5.20837M12.4999 12.5L5.20825 5.20837M12.4999 12.5L19.7916 19.7917" stroke="black" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -69,14 +65,14 @@ function App() {
           {/* Title Card */}
           <div className="title-card">
             <h1 className="main-title">
-              {r?.species_top5?.[0] ? r.species_top5[0].common_name : 'Ocean Point'}
+              {r?.seal_present === true && r?.species_top5?.[0] ? r.species_top5[0].common_name : 'Ocean Point'}
             </h1>
             <p className="scientific-name">
-              {r?.species_top5?.[0]?.species ?? ''}
+              {r?.seal_present === true ? (r?.species_top5?.[0]?.species ?? '') : ''}
             </p>
-            
-            <img 
-              src={insight.image} 
+
+            <img
+              src={insight.image}
               alt="seal"
               style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '12px' }}
             />
@@ -96,29 +92,40 @@ function App() {
             </div>
           </div>
 
-          {/* Fun Fact Card */}
-          <div className="info-card">
-            <h2 className="card-header">Did you know?</h2>
-            <p className="body-text truncate-text">{insight.fact}</p>
-          </div>
+          {/* Low probability message OR fun fact + species */}
+          {r?.seal_present === false ? (
+            <div className="info-card">
+              <p className="body-text" style={{ textAlign: 'center', color: '#464444', fontStyle: 'italic', width: '100%' }}>
+                It is unlikely a seal will be spotted around here.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Fun Fact Card */}
+              <div className="info-card">
+                <h2 className="card-header">Did you know?</h2>
+                <p className="body-text truncate-text">{insight.fact}</p>
+              </div>
 
-          {/* Top Species Card */}
-          <div className="info-card">
-            <h2 className="card-header">Top Species</h2>
-            {(r?.species_top5 ?? []).slice(0, 2).map((sp, i) => (
-				<div key={sp.species} className="species-row">
-					<span className="body-text">
-					<strong>{i + 1}. {sp.common_name}</strong>
-					{' '}<span className="body-text-2">({sp.species})</span>
-					</span>
-					<span className="body-text-2">
-					{(sp.probability * 100).toFixed(2)}% conditional · {(sp.probability_joint * 100).toFixed(2)}% joint
-					</span>
-				</div>
-				))}
-          </div>
+              {/* Top Species Card */}
+              <div className="info-card">
+                <h2 className="card-header">Top Species</h2>
+                {(r?.species_top5 ?? []).slice(0, 2).map((sp, i) => (
+                  <div key={sp.species} className="species-row">
+                    <span className="body-text">
+                      <strong>{i + 1}. {sp.common_name}</strong>
+                      {' '}<span className="body-text-2">({sp.species})</span>
+                    </span>
+                    <span className="body-text-2">
+                      {(sp.probability * 100).toFixed(2)}% conditional · {(sp.probability_joint * 100).toFixed(2)}% joint
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
-          {/* Conditions Card */}
+          {/* Conditions Card — always shown */}
           <div className="info-card">
             <h2 className="card-header">Conditions</h2>
             <div className="conditions-grid">
