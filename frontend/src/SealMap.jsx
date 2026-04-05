@@ -8,8 +8,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 const MAP_STYLE = 'mapbox://styles/minniekay-0/cmnkv4xcf004f01sg0yia4lv0'
 
 /** Matches the working standalone Mapbox sample (Pittsburgh demo viewport). */
-const INITIAL_CENTER = [-79.999732, 40.4374]
-const INITIAL_ZOOM = 11
+const INITIAL_CENTER = [-30, 20]
+const INITIAL_ZOOM = 2
 
 const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:8000').replace(/\/$/, '')
 
