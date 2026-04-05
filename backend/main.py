@@ -20,6 +20,18 @@ from src.predict_point import LandPointError, build_feature_matrix
 _models = {}
 
 
+def _cors_allow_origins():
+    defaults = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+    extra = os.environ.get("ALLOWED_ORIGINS", "").strip()
+    if not extra:
+        return defaults
+    parsed = [o.strip() for o in extra.split(",") if o.strip()]
+    return list(dict.fromkeys(defaults + parsed))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     for key, path in [
@@ -29,12 +41,18 @@ async def lifespan(app: FastAPI):
         ("sc2", conf.SPECIES_SCALER_PKL),
         ("cls", conf.SPECIES_CLASSES_PKL),
     ]:
+        print(f">>> checking {key}: {path}", flush=True)
         if not os.path.isfile(path):
-            raise RuntimeError("missing model file %s (train pipeline first)" % path)
+            raise RuntimeError("missing model file %s" % path)
+        print(f">>> loading {key}...", flush=True)
         _models[key] = joblib.load(path)
+        print(f">>> loaded {key}", flush=True)
+    print(">>> resolving IHO...", flush=True)
     iho = conf.resolve_iho_shapefile()
+    print(f">>> IHO result: {iho}", flush=True)
     if iho:
         geocoder_util.set_iho_shapefile(iho)
+    print(">>> startup complete", flush=True)
     yield
     _models.clear()
 
@@ -48,10 +66,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_cors_allow_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
