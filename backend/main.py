@@ -11,10 +11,11 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from typing import Optional
 
 import conf
 import geocoder_util
-from src.predict_point import build_feature_matrix
+from src.predict_point import LandPointError, build_feature_matrix
 
 _models = {}
 
@@ -74,6 +75,41 @@ class SpeciesEntry(BaseModel):
     probability_joint: float = Field(..., description="P(seal) * P(species | seal)")
 
 
+class PredictionCovariates(BaseModel):
+    """Environmental and engineered inputs used for the SDM (same order as training)."""
+
+    latitude: float
+    longitude: float
+    month: int
+    day: int
+    reference_year: int = Field(..., description="Calendar year used for SST / wind layers")
+    bathy_elevation_m: float = Field(
+        ...,
+        description="ETOPO elevation (m): negative = ocean floor below sea level, positive = land",
+    )
+    ocean_depth_m: float = Field(
+        ...,
+        description="Positive depth below sea surface (m); 0 on land",
+    )
+    seafloor_slope: float
+    distance_to_shore_km: float = Field(
+        ...,
+        description="Great-circle distance to nearest ETOPO ocean cell (km)",
+    )
+    sea_surface_temperature_c: Optional[float] = Field(
+        None,
+        description="Monthly SST (°C) at nearest grid; omitted for land points",
+    )
+    wind_speed_10m: Optional[float] = Field(
+        None,
+        description="NCEP-derived 10 m wind speed at nearest month/grid; omitted for land",
+    )
+    month_sin: float
+    month_cos: float
+    abs_latitude: float
+    note: Optional[str] = None
+
+
 class PredictResponse(BaseModel):
     latitude: float
     longitude: float
@@ -81,6 +117,7 @@ class PredictResponse(BaseModel):
     month: int
     day: int
     reference_year_used: int
+    covariates: PredictionCovariates
     seal_probability: float
     seal_present: bool
     species_top5: list[SpeciesEntry]
@@ -98,14 +135,33 @@ def health_check():
 def predict(request: PredictRequest):
     """
     Backfill bathy/SST/wind for lat/lon and month (year fixed in config for SST/wind).
-    Returns P(seal) and top-5 species from Stage 2 (conditional on seal).
+    Returns covariates, P(seal), and top-5 species from Stage 2 (conditional on seal).
+
+    Ocean-only: if ETOPO indicates land (elevation >= 0), returns **422** with
+    `location_name` and `covariates` but does not run inference.
     """
     try:
-        X, warns = build_feature_matrix(
+        X, warns, covariates = build_feature_matrix(
             request.latitude,
             request.longitude,
             request.month,
             request.day,
+        )
+    except LandPointError as exc:
+        try:
+            location_name = geocoder_util.get_location_name(
+                request.latitude, request.longitude
+            )
+        except Exception:
+            location_name = "Unknown Location"
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "point_on_land",
+                "message": "Prediction is only defined for ocean points (ETOPO bathymetry shows land).",
+                "location_name": location_name,
+                "covariates": exc.covariates,
+            },
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
@@ -146,6 +202,8 @@ def predict(request: PredictRequest):
             )
         )
 
+    cov_model = PredictionCovariates(**covariates)
+
     return PredictResponse(
         latitude=request.latitude,
         longitude=request.longitude,
@@ -153,6 +211,7 @@ def predict(request: PredictRequest):
         month=request.month,
         day=request.day,
         reference_year_used=conf.API_REF_YEAR,
+        covariates=cov_model,
         seal_probability=round(p_seal, 6),
         seal_present=p_seal >= DECISION_THRESHOLD,
         species_top5=top,

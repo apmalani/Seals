@@ -1,71 +1,146 @@
-<<<<<<< HEAD
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import './App.css'
 import sealFacts from './sealFacts'
+import SealMap from './SealMap.jsx'
+
+function pickRandomFactForSpecies(commonName) {
+  const normalized = (commonName || '').trim()
+  const species =
+    sealFacts.find((s) => s.common_name === normalized) ||
+    sealFacts.find(
+      (s) => s.common_name.toLowerCase() === normalized.toLowerCase()
+    ) ||
+    sealFacts.find((s) => s.common_name === 'Harbor seal')
+  const facts = species.fun_facts
+  return facts[Math.floor(Math.random() * facts.length)]
+}
+
+function fmtCov(v, unit = '', digits = 2) {
+  if (v == null || Number.isNaN(Number(v))) return '—'
+  const n = Number(v)
+  const s = digits === 0 ? String(Math.round(n)) : n.toFixed(digits)
+  return unit ? `${s} ${unit}` : s
+}
 
 function App() {
-  
   const [showPopup, setShowPopup] = useState(false)
-  const [currentFact, setCurrentFact] = useState("")
+  const [insight, setInsight] = useState(null)
 
-  const handleMapClick = () => {
-    const species = sealFacts.find(s => s.common_name === "Harbor seal")
-    const randomFact = species.fun_facts[Math.floor(Math.random() * species.fun_facts.length)]
-    setCurrentFact(randomFact)
+  const handlePredictionResult = useCallback((data, meta) => {
+    const topName =
+      data?.seal_present === true ? data?.species_top5?.[0]?.common_name : null
+    setInsight({
+      result: data,
+      meta,
+      fact: pickRandomFactForSpecies(topName),
+    })
     setShowPopup(true)
-  }
+  }, [])
 
   const closePopup = () => {
     setShowPopup(false)
   }
 
+  const r = insight?.result
+  const m = insight?.meta
+  const c = r?.covariates
+
   return (
     <div className="app-wrapper">
-
-      <div
-        className={`map-container ${showPopup ? 'popup-open' : ''}`}
-        onClick={handleMapClick}
-      >
-        <div className="placeholder-map">
-          <h2>Click anywhere on the blue background!</h2>
-        </div>
-
-        <div className="zoom-controls">
-          <button className="icon-btn" onClick={e => e.stopPropagation()}>+</button>
-          <button className="icon-btn" onClick={e => e.stopPropagation()}>−</button>
-        </div>
+      <div className={`map-container ${showPopup ? 'popup-open' : ''}`}>
+        <SealMap onPredictionResult={handlePredictionResult} />
       </div>
 
-      {showPopup && (
-        <div className="popup-panel" onClick={e => e.stopPropagation()}>
-          <button className="close-btn" onClick={closePopup}>✖</button>
+      {showPopup && insight != null && (
+        <div className="popup-panel" onClick={(e) => e.stopPropagation()}>
+          <button type="button" className="close-btn" onClick={closePopup}>
+            ✖
+          </button>
 
-          <h2>Location Data</h2>
+          <h2>Location data</h2>
 
           <div className="data-list">
-            <div className="data-item"><strong>Depth of Sea Floor:</strong><br />-- m</div>
-            <div className="data-item"><strong>Slope of Sea Floor:</strong><br />-- °</div>
-            <div className="data-item"><strong>Sea Surface Temp:</strong><br />-- °C</div>
-            <div className="data-item"><strong>Sea Surface Wind Speed:</strong><br />-- knots</div>
-            <div className="data-item"><strong>Distance to Nearest Shore:</strong><br />-- km (KDTree)</div>
-            <div className="data-item"><strong>Month of Year:</strong><br />--</div>
-            <div className="data-item"><strong>Latitude (Eq. Closeness):</strong><br />--</div>
+            <div className="data-item">
+              <strong>Place</strong>
+              <br />
+              {r?.location_name ?? '—'}
+            </div>
+            <div className="data-item">
+              <strong>P(seal)</strong>
+              <br />
+              {r != null && typeof r.seal_probability === 'number'
+                ? `${(r.seal_probability * 100).toFixed(2)}%`
+                : '—'}
+            </div>
+            <div className="data-item">
+              <strong>Depth of sea floor</strong>
+              <br />
+              {c != null ? fmtCov(c.ocean_depth_m, 'm', 1) : '—'}
+            </div>
+            <div className="data-item">
+              <strong>Slope of sea floor</strong>
+              <br />
+              {c != null ? fmtCov(c.seafloor_slope, '', 4) : '—'}
+            </div>
+            <div className="data-item">
+              <strong>Sea surface temp</strong>
+              <br />
+              {c != null ? fmtCov(c.sea_surface_temperature_c, '°C', 2) : '—'}
+            </div>
+            <div className="data-item">
+              <strong>Sea surface wind (10 m)</strong>
+              <br />
+              {c != null ? fmtCov(c.wind_speed_10m, 'm/s', 2) : '—'}
+            </div>
+            <div className="data-item">
+              <strong>Distance to nearest shore</strong>
+              <br />
+              {c != null ? fmtCov(c.distance_to_shore_km, 'km', 2) : '—'}
+            </div>
+            <div className="data-item">
+              <strong>Month of year</strong>
+              <br />
+              {m != null ? m.month : '—'}
+            </div>
+            <div className="data-item">
+              <strong>Latitude</strong>
+              <br />
+              {m != null ? m.latitude : '—'}
+            </div>
+            <div className="data-item">
+              <strong>Longitude</strong>
+              <br />
+              {m != null ? m.longitude : '—'}
+            </div>
+            {(r?.reference_year_used != null || c?.reference_year != null) && (
+              <div className="data-item">
+                <strong>Reference year (ocean layers)</strong>
+                <br />
+                {r?.reference_year_used ?? c?.reference_year}
+              </div>
+            )}
+            {c?.bathy_elevation_m != null && (
+              <div className="data-item">
+                <strong>Bathy elevation (ETOPO)</strong>
+                <br />
+                {fmtCov(c.bathy_elevation_m, 'm', 1)}
+              </div>
+            )}
           </div>
 
           <div className="fun-fact-box">
             <h3>💡 Fun Fact</h3>
-            <p>{currentFact}</p>
+            {r?.seal_present === false && (
+              <p style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
+                With seals unlikely here, here is a general seal fact (not from the species model).
+              </p>
+            )}
+            <p>{insight.fact}</p>
           </div>
         </div>
       )}
     </div>
   )
-=======
-import SealMap from './SealMap.jsx'
-
-function App() {
-  return <SealMap />
->>>>>>> 0e333b1 (white orb)
 }
 
 export default App

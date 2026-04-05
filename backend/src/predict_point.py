@@ -18,6 +18,14 @@ from src.feat_eng import add_feats
 _bathy_cache = None
 
 
+class LandPointError(Exception):
+    """ETOPO shows land (elevation >= 0); do not run ocean SDM."""
+
+    def __init__(self, covariates: dict):
+        self.covariates = covariates
+        super().__init__("point_on_land")
+
+
 def _ensure_bathy():
     global _bathy_cache
     if _bathy_cache is not None:
@@ -48,11 +56,32 @@ def build_feature_matrix(lat, lon, month, _day):
     evar, latk, lonk = c["evar"], c["latk"], c["lonk"]
     sel = {latk: lat, lonk: lon}
     elev = float(ds[evar].sel(**sel, method="nearest").values)
-    if elev >= 0:
-        warnings.append("point_on_land")
     depth = -elev if elev < 0 else 0.0
     slope = float(sg.sel(**sel, method="nearest").values)
     dist_shore = _shore_km(tree, lat, lon)
+
+    if elev >= 0:
+        ms = float(np.sin(2 * np.pi * month / 12))
+        mc = float(np.cos(2 * np.pi * month / 12))
+        raise LandPointError(
+            {
+                "latitude": float(lat),
+                "longitude": float(lon),
+                "month": int(month),
+                "day": int(_day),
+                "reference_year": int(conf.API_REF_YEAR),
+                "bathy_elevation_m": float(elev),
+                "ocean_depth_m": 0.0,
+                "seafloor_slope": float(slope),
+                "distance_to_shore_km": float(dist_shore),
+                "sea_surface_temperature_c": None,
+                "wind_speed_10m": None,
+                "month_sin": ms,
+                "month_cos": mc,
+                "abs_latitude": float(abs(lat)),
+                "note": "SST and wind were not fetched; inference is only defined for ocean points.",
+            }
+        )
 
     os.makedirs(conf.SST_DIR, exist_ok=True)
     sess = _mk_session()
@@ -119,4 +148,21 @@ def build_feature_matrix(lat, lon, month, _day):
     )
     df = add_feats(df)
     X = df[conf.ALL_FEATS].values.astype(np.float64)
-    return X, warnings
+    covariates = {
+        "latitude": float(lat),
+        "longitude": float(lon),
+        "month": int(month),
+        "day": int(_day),
+        "reference_year": int(conf.API_REF_YEAR),
+        "bathy_elevation_m": float(elev),
+        "ocean_depth_m": float(depth),
+        "seafloor_slope": float(slope),
+        "distance_to_shore_km": float(dist_shore),
+        "sea_surface_temperature_c": float(sst_v),
+        "wind_speed_10m": float(wind_v),
+        "month_sin": float(ms),
+        "month_cos": float(mc),
+        "abs_latitude": float(abs(lat)),
+        "note": None,
+    }
+    return X, warnings, covariates

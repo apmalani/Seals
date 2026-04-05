@@ -1,10 +1,17 @@
 import os
+from typing import Optional
 
 basedir = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(basedir, "data")
+
+# Heavy downloads / caches shared across all training runs (never per-experiment)
+SHARED_DATA_DIR = os.path.join(basedir, "data")
+
+# Per-run CSV + model + report paths (default: same layout as before)
+DATA_DIR = SHARED_DATA_DIR
 MODELS_DIR = os.path.join(basedir, "models")
 RESULTS_DIR = os.path.join(basedir, "results")
-IHO_DATA_DIR = os.path.join(DATA_DIR, "iho")
+
+IHO_DATA_DIR = os.path.join(SHARED_DATA_DIR, "iho")
 
 
 def resolve_iho_shapefile():
@@ -36,15 +43,15 @@ ERDDAP = "https://coastwatch.pfeg.noaa.gov/erddap"
 
 ETOPO_DS = "etopo180"
 ETOPO_STRIDE = 8
-ETOPO_FILE = os.path.join(DATA_DIR, "etopo_global.nc")
+ETOPO_FILE = os.path.join(SHARED_DATA_DIR, "etopo_global.nc")
 
 SST_DS = "ncdcOisst21Agg"
 SST_STRIDE = 4
-SST_DIR = os.path.join(DATA_DIR, "sst_cache")
+SST_DIR = os.path.join(SHARED_DATA_DIR, "sst_cache")
 
 UWND_URL = "https://psl.noaa.gov/thredds/dodsC/Datasets/ncep.reanalysis.derived/surface/uwnd.mon.mean.nc"
 VWND_URL = "https://psl.noaa.gov/thredds/dodsC/Datasets/ncep.reanalysis.derived/surface/vwnd.mon.mean.nc"
-WIND_FILE = os.path.join(DATA_DIR, "ncep_wind_speed.nc")
+WIND_FILE = os.path.join(SHARED_DATA_DIR, "ncep_wind_speed.nc")
 
 env_feats = ["depth", "slope", "sst", "wind_speed_10m", "distance_to_shore_km"]
 season_feats = ["month_sin", "month_cos"]
@@ -88,23 +95,67 @@ SPECIES_COMMON = {
 def species_common_name(scientific):
     return SPECIES_COMMON.get(str(scientific), str(scientific))
 
+
 TEST_SZ = 0.2
 SEED = 16111719
-MODEL_PKL = os.path.join(MODELS_DIR, "seal_sdm_model.pkl")
-SCALER_PKL = os.path.join(MODELS_DIR, "seal_scaler.pkl")
-SPECIES_MODEL_PKL = os.path.join(MODELS_DIR, "species_model.pkl")
-SPECIES_SCALER_PKL = os.path.join(MODELS_DIR, "species_scaler.pkl")
-SPECIES_CLASSES_PKL = os.path.join(MODELS_DIR, "species_classes.pkl")
 
-BATHY_CSV = os.path.join(DATA_DIR, "bathymetry.csv")
-OCC_CSV = os.path.join(DATA_DIR, "occurrences.csv")
-COMBINED_CSV = os.path.join(DATA_DIR, "combined.csv")
-RAW_CSV = os.path.join(DATA_DIR, "features_raw.csv")
-FINAL_CSV = os.path.join(DATA_DIR, "final_dataset.csv")
+BATHY_CSV = ""
+OCC_CSV = ""
+COMBINED_CSV = ""
+RAW_CSV = ""
+FINAL_CSV = ""
+MODEL_PKL = ""
+SCALER_PKL = ""
+SPECIES_MODEL_PKL = ""
+SPECIES_SCALER_PKL = ""
+SPECIES_CLASSES_PKL = ""
+EQ_TXT = ""
+RESULTS_TXT = ""
+ROC_S1_PNG = ""
+ROC_S2_PNG = ""
+CONFUSION_PNG = ""
+FEAT_IMP_PNG = ""
 
-EQ_TXT = os.path.join(RESULTS_DIR, "equation.txt")
-RESULTS_TXT = os.path.join(RESULTS_DIR, "results.txt")
-ROC_S1_PNG = os.path.join(RESULTS_DIR, "roc_stage1.png")
-ROC_S2_PNG = os.path.join(RESULTS_DIR, "roc_stage2.png")
-CONFUSION_PNG = os.path.join(RESULTS_DIR, "confusion_species.png")
-FEAT_IMP_PNG = os.path.join(RESULTS_DIR, "feature_importance.png")
+
+def _rebind_run_paths():
+    """Refresh paths derived from DATA_DIR / MODELS_DIR / RESULTS_DIR."""
+    global BATHY_CSV, OCC_CSV, COMBINED_CSV, RAW_CSV, FINAL_CSV
+    global MODEL_PKL, SCALER_PKL, SPECIES_MODEL_PKL, SPECIES_SCALER_PKL, SPECIES_CLASSES_PKL
+    global EQ_TXT, RESULTS_TXT, ROC_S1_PNG, ROC_S2_PNG, CONFUSION_PNG, FEAT_IMP_PNG
+    BATHY_CSV = os.path.join(DATA_DIR, "bathymetry.csv")
+    OCC_CSV = os.path.join(DATA_DIR, "occurrences.csv")
+    COMBINED_CSV = os.path.join(DATA_DIR, "combined.csv")
+    RAW_CSV = os.path.join(DATA_DIR, "features_raw.csv")
+    FINAL_CSV = os.path.join(DATA_DIR, "final_dataset.csv")
+    MODEL_PKL = os.path.join(MODELS_DIR, "seal_sdm_model.pkl")
+    SCALER_PKL = os.path.join(MODELS_DIR, "seal_scaler.pkl")
+    SPECIES_MODEL_PKL = os.path.join(MODELS_DIR, "species_model.pkl")
+    SPECIES_SCALER_PKL = os.path.join(MODELS_DIR, "species_scaler.pkl")
+    SPECIES_CLASSES_PKL = os.path.join(MODELS_DIR, "species_classes.pkl")
+    EQ_TXT = os.path.join(RESULTS_DIR, "equation.txt")
+    RESULTS_TXT = os.path.join(RESULTS_DIR, "results.txt")
+    ROC_S1_PNG = os.path.join(RESULTS_DIR, "roc_stage1.png")
+    ROC_S2_PNG = os.path.join(RESULTS_DIR, "roc_stage2.png")
+    CONFUSION_PNG = os.path.join(RESULTS_DIR, "confusion_species.png")
+    FEAT_IMP_PNG = os.path.join(RESULTS_DIR, "feature_importance.png")
+
+
+def set_experiment(name: str, n_records: Optional[int] = None):
+    """
+    Point CSV / model / results outputs at experiments/<name>/ without touching
+    shared ETOPO, SST cache, or wind NetCDF under data/.
+    """
+    global DATA_DIR, MODELS_DIR, RESULTS_DIR, N_RECORDS
+    root = os.path.join(basedir, "experiments", name)
+    DATA_DIR = os.path.join(root, "data")
+    MODELS_DIR = os.path.join(root, "models")
+    RESULTS_DIR = os.path.join(root, "results")
+    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(MODELS_DIR, exist_ok=True)
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    if n_records is not None:
+        N_RECORDS = int(n_records)
+    _rebind_run_paths()
+
+
+_rebind_run_paths()

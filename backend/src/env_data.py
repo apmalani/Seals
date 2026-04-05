@@ -28,7 +28,7 @@ def grab_etopo():
         "[(%s):%d:(%s)][(%s):%d:(%s)]" % (conf.LAT_MIN, s, conf.LAT_MAX, conf.LON_MIN, s, conf.LON_MAX))
     resp = _mk_session().get(url, timeout=300)
     resp.raise_for_status()
-    os.makedirs(conf.DATA_DIR, exist_ok=True)
+    os.makedirs(conf.SHARED_DATA_DIR, exist_ok=True)
     with open(conf.ETOPO_FILE, "wb") as fh:
         fh.write(resp.content)
     return xr.open_dataset(conf.ETOPO_FILE)
@@ -206,7 +206,7 @@ def _load_wind():
         coords={"time": uds.time.values, "lat": uds.lat.values, "lon": uds.lon.values})
     uds.close(); vds.close()
 
-    os.makedirs(conf.DATA_DIR, exist_ok=True)
+    os.makedirs(conf.SHARED_DATA_DIR, exist_ok=True)
     ds.to_netcdf(conf.WIND_FILE)
     print("  wind cached (%d MB)" % int(os.path.getsize(conf.WIND_FILE)/1e6))
     return ds
