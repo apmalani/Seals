@@ -1,4 +1,8 @@
 import 'mapbox-gl/dist/mapbox-gl.css'
+const _fontLink = document.createElement('link')
+_fontLink.rel = 'stylesheet'
+_fontLink.href = 'https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans:wght@400;600;700&display=swap'
+document.head.appendChild(_fontLink)
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 const MAP_STYLE = 'mapbox://styles/minniekay-0/cmnkv4xcf004f01sg0yia4lv0'
@@ -27,19 +31,33 @@ async function loadMapboxGL() {
 
 const panelStyle = {
   position: 'absolute',
-  top: 16,
+  bottom: 16,
   left: 16,
   zIndex: 10,
-  width: 'min(360px, calc(100vw - 32px))',
-  maxHeight: 'calc(100vh - 32px)',
-  overflowY: 'auto',
-  padding: '16px 18px',
+  width: 341,
   borderRadius: 12,
-  background: 'rgba(255, 255, 255, 0.94)',
-  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-  fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-  fontSize: 14,
-  color: '#1a1a2e',
+  background: '#F9F6F0',
+  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+  fontFamily: "'Open Sans', sans-serif",
+  overflow: 'hidden',
+}
+
+const headerStyle = {
+  background: '#CDE2EB',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: 13,
+  padding: '24px 16px',
+  borderRadius: '16px 16px 0 0',
+}
+
+const bodyStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  padding: '20px 24px',
+  gap: 12,
 }
 
 const labelStyle = {
@@ -49,23 +67,28 @@ const labelStyle = {
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
   color: '#64748b',
-  marginBottom: 4,
+  marginBottom: 2,
+  alignSelf: 'flex-start',
 }
 
 const valueStyle = {
-  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-  fontSize: 15,
-  marginBottom: 14,
+  fontFamily: "'Open Sans', sans-serif",
+  fontSize: 14,
+  color: '#023047',
+  fontWeight: 600,
+  marginBottom: 4,
+  alignSelf: 'flex-start',
 }
 
 const inputStyle = {
   width: '100%',
   padding: '10px 12px',
   borderRadius: 8,
-  border: '1px solid #cbd5e1',
+  border: '1px solid #8ECAE6',
   fontSize: 14,
-  marginBottom: 14,
   boxSizing: 'border-box',
+  color: '#023047',
+  fontFamily: "'Open Sans', sans-serif",
 }
 
 const buttonStyle = {
@@ -73,11 +96,12 @@ const buttonStyle = {
   padding: '12px 16px',
   borderRadius: 8,
   border: 'none',
-  background: '#0f766e',
+  background: '#023047',
   color: '#fff',
   fontSize: 15,
   fontWeight: 600,
   cursor: 'pointer',
+  fontFamily: "'Open Sans', sans-serif",
 }
 
 const buttonDisabled = {
@@ -87,7 +111,8 @@ const buttonDisabled = {
 }
 
 const errorBox = {
-  marginTop: 12,
+  width: '100%',
+  marginTop: 4,
   padding: 10,
   borderRadius: 8,
   background: '#fef2f2',
@@ -97,19 +122,20 @@ const errorBox = {
 }
 
 const landNoticeBox = {
-  marginTop: 12,
+  width: '100%',
+  marginTop: 4,
   padding: 14,
   borderRadius: 10,
-  background: 'linear-gradient(165deg, #fffbeb 0%, #fef3c7 100%)',
+  background: '#fffbeb',
   border: '1px solid #fbbf24',
-  boxShadow: '0 2px 8px rgba(245, 158, 11, 0.12)',
   color: '#422006',
   fontSize: 14,
   lineHeight: 1.5,
 }
 
 const resultBox = {
-  marginTop: 14,
+  width: '100%',
+  marginTop: 4,
   padding: 12,
   borderRadius: 8,
   background: '#f8fafc',
@@ -156,13 +182,25 @@ function fmtNum(v, digits = 2) {
 
 function makePinElement() {
   const el = document.createElement('div')
-  el.title = 'Selected location'
-  el.style.width = '22px'
-  el.style.height = '22px'
+  el.style.width = '42px'
+  el.style.height = '42px'
   el.style.borderRadius = '50%'
-  el.style.background = '#dc2626'
-  el.style.border = '3px solid #fff'
+  el.style.background = '#FB8500'
+  el.style.border = '3px solid #FB8500'
   el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.35)'
+  el.style.display = 'flex'
+  el.style.alignItems = 'center'
+  el.style.justifyContent = 'center'
+  el.style.overflow = 'hidden'
+  el.style.cursor = 'pointer'
+
+  const img = document.createElement('img')
+  img.src = '/seal-icon.png'
+  img.style.width = '34px'
+  img.style.height = '25px'
+  img.style.objectFit = 'cover'
+
+  el.appendChild(img)
   return el
 }
 
@@ -459,132 +497,103 @@ export default function SealMap({ onPredictionResult } = {}) {
       )}
 
       <div style={panelStyle}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: '#0f172a' }}>
-          Seal presence
-        </h2>
+        {/* Header with logo and title */}
+        <div style={headerStyle}>
+          <img src="/seal-icon.png" alt="seal" style={{ width: 'auto', height: 45 }} 
+            onError={(e) => { e.target.style.display = 'none' }} />
+          <span style={{
+            fontFamily: "'Fredoka One', cursive",
+            fontSize: 28,
+            color: '#FB8500',
+            WebkitTextStroke: '5px white',
+            paintOrder: 'stroke fill',
+          }}>See-A-Seal</span>
+        </div>
 
-        <span style={labelStyle}>API</span>
-        <div style={{ ...valueStyle, fontSize: 12, color: '#64748b' }}>{API_BASE}</div>
+        {/* Body */}
+        <div style={bodyStyle}>
+          <p style={{ fontSize: 13, color: '#464444', textAlign: 'center', lineHeight: 1.5 }}>
+            Click anywhere on the map to predict today's seal presence, or pick a date below to forecast a different day.
+          </p>
 
-        <span style={labelStyle}>Latitude</span>
-        <div style={valueStyle}>{latStr}</div>
-
-        <span style={labelStyle}>Longitude</span>
-        <div style={valueStyle}>{lonStr}</div>
-
-        <span style={labelStyle}>Date</span>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          style={inputStyle}
-        />
-
-        <button
-          type="button"
-          style={btnStyle}
-          disabled={pin == null || loading}
-          onClick={() => void onPredict()}
-        >
-          {loading ? 'Running prediction…' : 'Predict seal presence'}
-        </button>
-
-        {landNotice != null && (
-          <div style={landNoticeBox}>
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8, color: '#92400e' }}>
-              This point is on land
-            </div>
-            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#713f12' }}>
-              {typeof landNotice.message === 'string'
-                ? landNotice.message
-                : 'Seal habitat models apply to ocean points only.'}
-            </p>
-            <div style={{ fontSize: 13, marginBottom: 8 }}>
-              <span style={{ fontWeight: 600, color: '#78350f' }}>Place</span>
-              <br />
-              {landNotice.location_name ?? '—'}
-            </div>
-            {landNotice.covariates != null && (
-              <div
-                style={{
-                  marginTop: 10,
-                  paddingTop: 10,
-                  borderTop: '1px solid rgba(251, 191, 36, 0.5)',
-                  fontSize: 12,
-                  color: '#854d0e',
-                }}
-              >
-                <div style={{ marginBottom: 4 }}>
-                  <strong>Land elevation (ETOPO)</strong>: {fmtNum(landNotice.covariates.bathy_elevation_m, 1)}{' '}
-                  m
-                </div>
-                <div style={{ marginBottom: 4 }}>
-                  <strong>Distance to ocean</strong>: {fmtNum(landNotice.covariates.distance_to_shore_km, 2)} km
-                </div>
-                {landNotice.covariates.note != null && (
-                  <div style={{ marginTop: 8, fontStyle: 'italic' }}>{landNotice.covariates.note}</div>
-                )}
-              </div>
-            )}
-            <p style={{ margin: '14px 0 0', fontSize: 12, color: '#a16207' }}>
-              Move the pin offshore to run the full prediction.
-            </p>
+          <div style={{ width: '100%' }}>
+            <span style={labelStyle}>Latitude</span>
+            <div style={valueStyle}>{latStr}</div>
           </div>
-        )}
 
-        {error != null && <div style={errorBox}>{error}</div>}
+          <div style={{ width: '100%' }}>
+            <span style={labelStyle}>Longitude</span>
+            <div style={valueStyle}>{lonStr}</div>
+          </div>
 
-        {result != null && (
-          <div style={resultBox}>
-            <div style={{ fontWeight: 700, marginBottom: 8, color: '#0f172a' }}>Results</div>
-            <div style={{ marginBottom: 6 }}>
-              <strong>Place:</strong> {result.location_name}
-            </div>
-            <div style={{ marginBottom: 6 }}>
-              <strong>P(seal):</strong> {(result.seal_probability * 100).toFixed(2)}% —{' '}
-              {result.seal_present ? 'likely present' : 'likely absent'}
-            </div>
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>
-              Model uses month/day + ref. year {result.reference_year_used} for ocean layers.
-            </div>
-            {result.warnings != null && result.warnings.length > 0 && (
-              <div style={{ marginBottom: 8, color: '#b45309', fontSize: 12 }}>
-                Warnings: {result.warnings.join(', ')}
+          <div style={{ width: '100%' }}>
+            <span style={labelStyle}>Date</span>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+
+          <button
+            type="button"
+            style={btnStyle}
+            disabled={pin == null || loading}
+            onClick={() => void onPredict()}
+          >
+            {loading ? 'Running prediction…' : 'Predict seal presence'}
+          </button>
+
+          {landNotice != null && (
+            <div style={landNoticeBox}>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8, color: '#92400e' }}>
+                This point is on land
               </div>
-            )}
-            {result.seal_present === true && (
-              <>
-                <div style={{ fontWeight: 600, marginTop: 10, marginBottom: 6 }}>
-                  Top species (given seal)
-                </div>
-                <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.5 }}>
-                  {result.species_top5?.map((s, i) => (
-                    <li key={i} style={{ marginBottom: 6 }}>
-                      <span style={{ fontWeight: 600 }}>{s.common_name}</span>
-                      <span style={{ color: '#64748b', fontSize: 12 }}> ({s.species})</span>
-                      <br />
-                      <span style={{ fontSize: 12 }}>
-                        {(s.probability * 100).toFixed(2)}% conditional ·{' '}
-                        {(s.probability_joint * 100).toFixed(2)}% joint
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </>
-            )}
-            {result.seal_present === false && (
-              <p style={{ marginTop: 12, fontSize: 12, color: '#64748b', lineHeight: 1.45 }}>
-                Species breakdown is shown only when the model predicts seals as likely present at
-                this point.
+              <p style={{ margin: '0 0 12px', fontSize: 13, color: '#713f12' }}>
+                {typeof landNotice.message === 'string'
+                  ? landNotice.message
+                  : 'Seal habitat models apply to ocean points only.'}
               </p>
-            )}
-          </div>
-        )}
+              <div style={{ fontSize: 13, marginBottom: 8 }}>
+                <span style={{ fontWeight: 600, color: '#78350f' }}>Place</span>
+                <br />
+                {landNotice.location_name ?? '—'}
+              </div>
+              {landNotice.covariates != null && (
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(251,191,36,0.5)', fontSize: 12, color: '#854d0e' }}>
+                  <div style={{ marginBottom: 4 }}>
+                    <strong>Land elevation (ETOPO)</strong>: {fmtNum(landNotice.covariates.bathy_elevation_m, 1)} m
+                  </div>
+                  <div style={{ marginBottom: 4 }}>
+                    <strong>Distance to ocean</strong>: {fmtNum(landNotice.covariates.distance_to_shore_km, 2)} km
+                  </div>
+                  {landNotice.covariates.note != null && (
+                    <div style={{ marginTop: 8, fontStyle: 'italic' }}>{landNotice.covariates.note}</div>
+                  )}
+                </div>
+              )}
+              <p style={{ margin: '14px 0 0', fontSize: 12, color: '#a16207' }}>
+                Move the pin offshore to run the full prediction.
+              </p>
+            </div>
+          )}
 
-        <p style={{ marginTop: 12, fontSize: 12, color: '#64748b', lineHeight: 1.45 }}>
-          Click the map to drop a pin, pick a date, then run the prediction against the FastAPI
-          backend.
-        </p>
+          {error != null && <div style={errorBox}>{error}</div>}
+
+          {result != null && (
+            <div style={resultBox}>
+              <div style={{ fontWeight: 700, marginBottom: 8, color: '#023047' }}>Results</div>
+              <div style={{ marginBottom: 6 }}>
+                <strong>Place:</strong> {result.location_name}
+              </div>
+              <div style={{ marginBottom: 6 }}>
+                <strong>P(seal):</strong> {(result.seal_probability * 100).toFixed(2)}% —{' '}
+                {result.seal_present ? 'likely present' : 'likely absent'}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

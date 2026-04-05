@@ -65,7 +65,7 @@ function App() {
           {/* Title Card */}
           <div className="title-card">
             <h1 className="main-title">
-              {r?.seal_present === true && r?.species_top5?.[0] ? r.species_top5[0].common_name : 'Ocean Point'}
+              {r?.seal_present === true && r?.species_top5?.[0] ? r.species_top5[0].common_name : 'No Seals Here! 🦭'}
             </h1>
             <p className="scientific-name">
               {r?.seal_present === true ? (r?.species_top5?.[0]?.species ?? '') : ''}
