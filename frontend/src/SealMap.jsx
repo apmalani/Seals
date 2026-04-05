@@ -581,18 +581,6 @@ export default function SealMap({ onPredictionResult } = {}) {
 
           {error != null && <div style={errorBox}>{error}</div>}
 
-          {result != null && (
-            <div style={resultBox}>
-              <div style={{ fontWeight: 700, marginBottom: 8, color: '#023047' }}>Results</div>
-              <div style={{ marginBottom: 6 }}>
-                <strong>Place:</strong> {result.location_name}
-              </div>
-              <div style={{ marginBottom: 6 }}>
-                <strong>P(seal):</strong> {(result.seal_probability * 100).toFixed(2)}% —{' '}
-                {result.seal_present ? 'likely present' : 'likely absent'}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
