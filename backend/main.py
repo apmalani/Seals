@@ -41,12 +41,18 @@ async def lifespan(app: FastAPI):
         ("sc2", conf.SPECIES_SCALER_PKL),
         ("cls", conf.SPECIES_CLASSES_PKL),
     ]:
+        print(f">>> checking {key}: {path}", flush=True)
         if not os.path.isfile(path):
-            raise RuntimeError("missing model file %s (train pipeline first)" % path)
+            raise RuntimeError("missing model file %s" % path)
+        print(f">>> loading {key}...", flush=True)
         _models[key] = joblib.load(path)
+        print(f">>> loaded {key}", flush=True)
+    print(">>> resolving IHO...", flush=True)
     iho = conf.resolve_iho_shapefile()
+    print(f">>> IHO result: {iho}", flush=True)
     if iho:
         geocoder_util.set_iho_shapefile(iho)
+    print(">>> startup complete", flush=True)
     yield
     _models.clear()
 
