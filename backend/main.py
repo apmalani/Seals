@@ -20,6 +20,18 @@ from src.predict_point import LandPointError, build_feature_matrix
 _models = {}
 
 
+def _cors_allow_origins():
+    defaults = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+    extra = os.environ.get("ALLOWED_ORIGINS", "").strip()
+    if not extra:
+        return defaults
+    parsed = [o.strip() for o in extra.split(",") if o.strip()]
+    return list(dict.fromkeys(defaults + parsed))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     for key, path in [
@@ -48,10 +60,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_cors_allow_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

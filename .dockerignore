@@ -1,0 +1,14 @@
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.py[cod]
+*$py.class
+.cursor
+frontend
+experiments
+backend/results
+*.log
+.env
+.env.*

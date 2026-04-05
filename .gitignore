@@ -6,3 +6,4 @@ frontend/.env
 frontend/.env.local
 frontend/.env.*.local
 experiments/
+*.md
