@@ -3,18 +3,6 @@ import './App.css'
 import sealFacts from './sealFacts'
 import SealMap from './SealMap.jsx'
 
-function pickRandomFactForSpecies(commonName) {
-  const normalized = (commonName || '').trim()
-  const species =
-    sealFacts.find((s) => s.common_name === normalized) ||
-    sealFacts.find(
-      (s) => s.common_name.toLowerCase() === normalized.toLowerCase()
-    ) ||
-    sealFacts.find((s) => s.common_name === 'Harbor seal')
-  const facts = species.fun_facts
-  return facts[Math.floor(Math.random() * facts.length)]
-}
-
 function fmtCov(v, unit = '', digits = 2) {
   if (v == null || Number.isNaN(Number(v))) return '—'
   const n = Number(v)
