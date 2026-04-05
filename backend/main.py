@@ -58,6 +58,8 @@ app.add_middleware(
 )
 
 DECISION_THRESHOLD = 0.5
+# Minimum P(species | seal) to include in the ranked list (drops sub-1% tails / 0.0% UI noise).
+MIN_SPECIES_DISPLAY_PROB = 0.01
 MODEL_VERSION = "sdm-two-stage-1.0"
 
 
@@ -120,7 +122,10 @@ class PredictResponse(BaseModel):
     covariates: PredictionCovariates
     seal_probability: float
     seal_present: bool
-    species_top5: list[SpeciesEntry]
+    species_top5: list[SpeciesEntry] = Field(
+        ...,
+        description="Up to TOP_K species with P(species|seal) >= 1%, descending",
+    )
     species_probabilities_conditional: bool = True
     warnings: list[str]
     model_version: str
@@ -135,7 +140,8 @@ def health_check():
 def predict(request: PredictRequest):
     """
     Backfill bathy/SST/wind for lat/lon and month (year fixed in config for SST/wind).
-    Returns covariates, P(seal), and top-5 species from Stage 2 (conditional on seal).
+    Returns covariates, P(seal), and up to TOP_K Stage-2 species (conditional on seal),
+    each with P(species|seal) at least 1%, in descending order.
 
     Ocean-only: if ETOPO indicates land (elevation >= 0), returns **422** with
     `location_name` and `covariates` but does not run inference.
@@ -188,10 +194,14 @@ def predict(request: PredictRequest):
 
     Xs2 = sc2.transform(X)
     p_sp = s2.predict_proba(Xs2)[0]
-    order = np.argsort(p_sp)[::-1][: conf.TOP_K]
+    order = np.argsort(p_sp)[::-1]
     top = []
     for i in order:
         pc = float(p_sp[i])
+        if pc < MIN_SPECIES_DISPLAY_PROB:
+            continue
+        if len(top) >= conf.TOP_K:
+            break
         sci = str(classes[i])
         top.append(
             SpeciesEntry(

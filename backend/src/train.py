@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler, label_binarize
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
 import conf
 
 
@@ -206,7 +207,7 @@ def make_plots(s1, s2):
         plt.close(fig)
         print("plot -> " + conf.CONFUSION_PNG)
 
-    top_n = 7
+    top_n = 6
     ranked = sorted(
         zip(conf.ALL_FEATS, np.abs(s1["coef"])), key=lambda x: x[1], reverse=True
     )[:top_n]
@@ -218,7 +219,7 @@ def make_plots(s1, s2):
     ax.set_yticks(range(len(names)))
     ax.set_yticklabels(names, fontsize=9)
     ax.set_xlabel("|Coefficient| (raw scale)")
-    ax.set_title("Feature importance — top %d (Stage 1 seal presence)" % top_n)
+    ax.set_title("Feature importance — Stage 1 seal presence")
     fig.tight_layout()
     fig.savefig(conf.FEAT_IMP_PNG, dpi=150)
     plt.close(fig)
